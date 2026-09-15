@@ -846,50 +846,7 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
               </div>
             </div>
 
-            {/* Buses Items */}
-            <div className="pt-2 border-t border-stone-100">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-stone-700">Detalle de Autocares / Buses:</span>
-                <button
-                  type="button"
-                  onClick={addBus}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-amber-900 hover:text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Añadir Bus</span>
-                </button>
-              </div>
 
-              <div className="flex flex-wrap gap-2">
-                {(liquidation.paxBreakdown.buses || []).map((bus) => (
-                  <div key={bus.id} className="flex items-center gap-1.5 bg-stone-50 border border-stone-300 rounded-lg px-2 py-1 text-xs">
-                    <input
-                      type="text"
-                      value={bus.nombre}
-                      onChange={(e) => handleBusChange(bus.id, 'nombre', e.target.value)}
-                      className="w-20 font-medium text-stone-800 bg-transparent border-none p-0 focus:outline-hidden"
-                    />
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      value={bus.pax || ''}
-                      onChange={(e) => handleBusChange(bus.id, 'pax', e.target.value)}
-                      placeholder="0"
-                      className="w-12 text-center font-mono font-bold bg-white border border-stone-300 rounded px-1 py-0.5"
-                    />
-                    <span className="text-stone-500 font-mono text-[10px]">pax</span>
-                    <button
-                      type="button"
-                      onClick={() => removeBus(bus.id)}
-                      className="text-stone-400 hover:text-rose-600 ml-1"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
 
           </div>
 
@@ -1439,44 +1396,7 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
                 />
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <span className="text-stone-600 font-medium">Buses ({totals.totalPaxBuses} pax):</span>
-                <div className="flex flex-wrap items-center gap-1">
-                  {(liquidation.paxBreakdown.buses || []).map((bus) => (
-                    <div key={bus.id} className="flex items-center gap-1 bg-white border border-stone-300 rounded px-1.5 py-0.5 text-[11px]">
-                      <input
-                        type="text"
-                        value={bus.nombre}
-                        onChange={(e) => handleBusChange(bus.id, 'nombre', e.target.value)}
-                        className="w-16 font-medium text-stone-700 bg-transparent border-none p-0 focus:outline-hidden"
-                      />
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min="0"
-                        value={bus.pax || ''}
-                        onChange={(e) => handleBusChange(bus.id, 'pax', e.target.value)}
-                        placeholder="0"
-                        className="w-12 text-center font-mono font-bold bg-stone-100 rounded px-1 py-0.5 text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeBus(bus.id)}
-                        className="text-stone-400 hover:text-rose-600 ml-0.5"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addBus}
-                    className="text-[11px] font-semibold text-amber-900 hover:text-amber-800 bg-amber-50 border border-amber-200/80 rounded px-2 py-0.5"
-                  >
-                    + Bus
-                  </button>
-                </div>
-              </div>
+
             </div>
 
             <div className="text-[11px] text-stone-500 font-mono hidden md:block">
