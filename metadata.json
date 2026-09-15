@@ -1,0 +1,8 @@
+{
+  "name": "Liquidación Cueva de Can Marçà",
+  "description": "Liquidación diaria de taquilla Cueva de Can Marçà con control de tickets, Bar, Tienda, cobro Visa y Total Neto.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
