@@ -165,6 +165,18 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({
                 <div className="text-sm font-bold font-mono">{formatEuro(totals.totalMiradorYoga)}</div>
               </div>
             </div>
+
+            {(liquidation.otrosIngresos || []).length > 0 && (
+              <div className="p-2.5 border border-stone-300 rounded-sm bg-stone-50/60 space-y-1">
+                <div className="text-stone-600 font-bold text-[11px] uppercase">Otros Ingresos</div>
+                {(liquidation.otrosIngresos || []).map((otro) => (
+                  <div key={otro.id} className="flex justify-between text-xs">
+                    <span>{otro.concepto || 'Otro ingreso'}</span>
+                    <span className="font-mono font-bold">{formatEuro(otro.importe || 0)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 3. Cobros Tarjeta (Visa) & Guías */}
@@ -190,6 +202,21 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({
                 <span>Total Tarjetas:</span>
                 <span className="font-mono">{formatEuro(totals.totalVisa)}</span>
               </div>
+              {(liquidation.otrosGastos || []).length > 0 && (
+                <div className="pt-2 mt-1 border-t border-stone-200 space-y-0.5">
+                  <div className="text-[11px] font-bold uppercase text-rose-800">Otros Gastos</div>
+                  {(liquidation.otrosGastos || []).map((gasto) => (
+                    <div key={gasto.id} className="flex justify-between py-0.5 text-rose-900">
+                      <span>{gasto.concepto || 'Otro gasto'}:</span>
+                      <span className="font-mono">−{formatEuro(gasto.importe || 0)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-bold pt-0.5 text-rose-900">
+                    <span>Total Otros Gastos:</span>
+                    <span className="font-mono">−{formatEuro(totals.totalOtrosGastos)}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="border border-stone-300 p-3 rounded-sm space-y-1">
@@ -224,7 +251,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({
             </div>
 
             <div className="flex justify-between text-sm font-black border-b border-stone-300 pb-1 text-amber-950">
-              <span>TOTAL NETO (BRUTO − VISA):</span>
+              <span>TOTAL NETO (BRUTO − VISA{totals.totalOtrosGastos > 0 ? ' − OTROS GASTOS' : ''}):</span>
               <span className="font-mono text-base">{formatEuro(totals.totalNeto)}</span>
             </div>
 

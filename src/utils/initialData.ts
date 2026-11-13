@@ -53,6 +53,7 @@ export const sampleLiquidation: DailyLiquidation = {
     tienda: 0,
     tickets: 0,
   },
+  otrosGastos: [],
   arqueo: {
     fondoCaja: 300,
     desglose: { ...emptyCashDenominations },
@@ -169,6 +170,7 @@ export const createNewDayFromPrevious = (
       tienda: 0,
       tickets: 0,
     },
+    otrosGastos: [],
     arqueo: {
       fondoCaja: previous.arqueo.fondoCaja || 300,
       desglose: { ...emptyCashDenominations },

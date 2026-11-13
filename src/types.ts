@@ -16,6 +16,12 @@ export interface OtherIncome {
   importe: number;
 }
 
+export interface OtherExpense {
+  id: string;
+  concepto: string;
+  importe: number;
+}
+
 export interface BusEntry {
   id: string;
   nombre: string;
@@ -89,6 +95,9 @@ export interface DailyLiquidation {
     tickets: number;
   };
 
+  // Otros gastos (debajo de las Visas)
+  otrosGastos?: OtherExpense[];
+
   // Arqueo de efectivo
   arqueo: {
     fondoCaja: number;
@@ -135,7 +144,8 @@ export interface TotalesCalculados {
   totalVisaTienda: number;
   totalVisaTickets: number;
   totalVisa: number;
-  totalNeto: number; // Total Bruto - Total Visa
+  totalOtrosGastos: number;
+  totalNeto: number; // Total Bruto - Total Visa - Total Otros Gastos
 
   efectivoTeorico: number; // Bruto - Tarjetas - Comisiones
   totalEfectivoContado: number;

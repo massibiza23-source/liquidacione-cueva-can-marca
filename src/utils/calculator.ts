@@ -100,10 +100,13 @@ export const calculateTotals = (liq: DailyLiquidation): TotalesCalculados => {
   const totalVisaTickets = liq.cobroVisa.tickets || 0;
   const totalVisa = totalVisaBar + totalVisaTienda + totalVisaTickets;
 
-  // Total Neto = Total Bruto - Total Cobro Visa
-  const totalNeto = totalBruto - totalVisa;
+  // Otros gastos (debajo de Visas)
+  const totalOtrosGastos = (liq.otrosGastos || []).reduce((acc, curr) => acc + (curr.importe || 0), 0);
 
-  // Efectivo teórico: Lo que debe haber en efectivo después de restar las tarjetas y comisiones entregadas
+  // Total Neto = Total Bruto - Total Cobro Visa - Total Otros Gastos
+  const totalNeto = totalBruto - totalVisa - totalOtrosGastos;
+
+  // Efectivo teórico: Lo que debe haber en efectivo después de restar las tarjetas, otros gastos y comisiones entregadas
   const efectivoTeorico = totalNeto - totalGastosYComisiones;
 
   // Efectivo contado en caja
@@ -141,6 +144,7 @@ export const calculateTotals = (liq: DailyLiquidation): TotalesCalculados => {
     totalVisaTienda,
     totalVisaTickets,
     totalVisa,
+    totalOtrosGastos,
     totalNeto,
     efectivoTeorico,
     totalEfectivoContado,
@@ -167,8 +171,14 @@ export const exportToCSV = (liq: DailyLiquidation, totals: TotalesCalculados): s
   lines.push(`Bar       Z,${liq.bar.zNumero}, , ,,Z bar,"${formatEuro(totals.totalBar)}",,`);
   lines.push(`Tienda  Z,${liq.tienda.zNumero},, ,,Z tienda,"${formatEuro(totals.totalTienda)}",,`);
   lines.push(`mirador,,,,,${liq.miradorYoga.concepto || 'yoga'},"${formatEuro(totals.totalMiradorYoga)}",,`);
+  (liq.otrosIngresos || []).forEach((otro) => {
+    lines.push(`Otro ingreso,,,,,${otro.concepto || ''},"${formatEuro(otro.importe || 0)}",,`);
+  });
   lines.push(`,,,,,,total brutto,"${formatEuro(totals.totalBruto)}",`);
   lines.push(`Cobro Visa,Bar,"${formatEuro(liq.cobroVisa.bar)}",Tienda,"${formatEuro(liq.cobroVisa.tienda)}",Tickets,"${formatEuro(liq.cobroVisa.tickets)}","${formatEuro(totals.totalVisa)}",`);
+  (liq.otrosGastos || []).forEach((gasto) => {
+    lines.push(`Otro gastos,,,,,${gasto.concepto || ''},"${formatEuro(gasto.importe || 0)}",,`);
+  });
   lines.push(`Total Neto,,,,,,,"${formatEuro(totals.totalNeto)}",`);
   lines.push(`Efectivo Teórico,,,,,,,"${formatEuro(totals.efectivoTeorico)}",`);
   lines.push(`Efectivo Contado,,,,,,,"${formatEuro(totals.totalEfectivoContado)}",`);
@@ -207,6 +217,7 @@ export interface MonthlyTotals {
   totalVisaBar: number;
   totalVisaTienda: number;
   totalVisaTickets: number;
+  totalOtrosGastos: number;
   totalNeto: number;
   totalGuias: number;
   totalComisiones: number;
@@ -258,6 +269,7 @@ export const calculateMonthlyTotals = (liquidations: DailyLiquidation[], yearMon
     totalVisaBar: 0,
     totalVisaTienda: 0,
     totalVisaTickets: 0,
+    totalOtrosGastos: 0,
     totalNeto: 0,
     totalGuias: 0,
     totalComisiones: 0,
@@ -286,6 +298,7 @@ export const calculateMonthlyTotals = (liquidations: DailyLiquidation[], yearMon
     acc.totalVisaBar += t.totalVisaBar;
     acc.totalVisaTienda += t.totalVisaTienda;
     acc.totalVisaTickets += t.totalVisaTickets;
+    acc.totalOtrosGastos += t.totalOtrosGastos;
     acc.totalNeto += t.totalNeto;
     acc.totalGuias += t.totalGuias;
     acc.totalComisiones += t.totalComisiones;
@@ -313,9 +326,15 @@ export const exportMonthlySummaryToCSV = (monthlyTotals: MonthlyTotals, days: Da
   lines.push(`Bar Z,,"${formatEuro(monthlyTotals.totalBar)}"`);
   lines.push(`Tienda Z,,"${formatEuro(monthlyTotals.totalTienda)}"`);
   lines.push(`Mirador / Yoga,,"${formatEuro(monthlyTotals.totalMiradorYoga)}"`);
+  if (monthlyTotals.totalOtrosIngresos > 0) {
+    lines.push(`Otros Ingresos,,"${formatEuro(monthlyTotals.totalOtrosIngresos)}"`);
+  }
   lines.push(`TOTAL BRUTO MES,,"${formatEuro(monthlyTotals.totalBruto)}"`);
   lines.push(`Cobro Visa (Tarjetas),,"${formatEuro(monthlyTotals.totalVisa)}"`);
-  lines.push(`TOTAL NETO MES (Bruto - Visa),,"${formatEuro(monthlyTotals.totalNeto)}"`);
+  if (monthlyTotals.totalOtrosGastos > 0) {
+    lines.push(`Otros Gastos,,"${formatEuro(monthlyTotals.totalOtrosGastos)}"`);
+  }
+  lines.push(`TOTAL NETO MES (Bruto - Visa - Gastos),,"${formatEuro(monthlyTotals.totalNeto)}"`);
   lines.push('');
   lines.push('DESGLOSE DÍA POR DÍA EN EL MES');
   lines.push('Fecha,Pax Adultos,Pax Niños,Pax Imserso,Total Pax,Total Bruto (€),Cobro Visa (€),Total Neto (€)');

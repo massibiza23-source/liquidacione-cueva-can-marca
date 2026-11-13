@@ -129,6 +129,14 @@ export const InstallModal: React.FC<InstallModalProps> = ({ isOpen, onClose }) =
                 </div>
               ) : isInstallable ? (
                 <div className="space-y-4">
+                  <div className="flex flex-col items-center justify-center p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-3">
+                    <img 
+                      src="pwa-192x192.png" 
+                      alt="Icono App" 
+                      className="w-20 h-20 rounded-2xl border border-stone-300 shadow-sm"
+                    />
+                    <h3 className="text-sm font-bold text-stone-900">Aplicación Oficial</h3>
+                  </div>
                   <div className="bg-amber-50/70 border border-amber-200/70 rounded-xl p-4 flex items-start gap-3">
                     <Sparkles className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
                     <div className="text-xs text-stone-700 leading-relaxed">
@@ -239,6 +247,21 @@ export const InstallModal: React.FC<InstallModalProps> = ({ isOpen, onClose }) =
                   </span>
                   <span className="text-[10px] bg-amber-700/60 px-2 py-0.5 rounded-md font-mono">
                     HD
+                  </span>
+                </a>
+
+                <a
+                  id="btn-download-icon-original"
+                  href="/cueva-icon-original.png"
+                  download="cueva-can-marca-original.png"
+                  className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-stone-100 text-stone-800 border border-stone-200 text-xs font-semibold flex items-center justify-between transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-stone-500" />
+                    <span>Descargar Icono Original (Alta Resolución)</span>
+                  </span>
+                  <span className="text-[10px] bg-stone-100 text-stone-600 px-2 py-0.5 rounded-md font-mono">
+                    Original
                   </span>
                 </a>
 

@@ -349,7 +349,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     {formatEuro(monthlyTotals.totalNeto)}
                   </div>
                   <div className="text-[11px] font-bold text-amber-900 mt-1">
-                    Bruto − Tarjetas Visa
+                    Bruto − Visa − Gastos
                   </div>
                 </div>
 
@@ -370,6 +370,15 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     <strong className="text-stone-900">Total Tarjetas (Visa):</strong>{' '}
                     <span className="font-mono font-bold text-stone-800">{formatEuro(monthlyTotals.totalVisa)}</span>
                   </span>
+                  {monthlyTotals.totalOtrosGastos > 0 && (
+                    <>
+                      <span className="text-stone-300 hidden sm:inline">•</span>
+                      <span>
+                        <strong className="text-rose-800">Otros Gastos:</strong>{' '}
+                        <span className="font-mono font-bold text-rose-900">−{formatEuro(monthlyTotals.totalOtrosGastos)}</span>
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-stone-500 text-[11px]">
@@ -377,6 +386,9 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                   <span>Tienda: <strong className="font-mono text-stone-700">{formatEuro(monthlyTotals.totalTienda)}</strong></span>
                   {monthlyTotals.totalMiradorYoga > 0 && (
                     <span>Mirador: <strong className="font-mono text-stone-700">{formatEuro(monthlyTotals.totalMiradorYoga)}</strong></span>
+                  )}
+                  {monthlyTotals.totalOtrosIngresos > 0 && (
+                    <span>Otros Ingresos: <strong className="font-mono text-stone-700">{formatEuro(monthlyTotals.totalOtrosIngresos)}</strong></span>
                   )}
                 </div>
               </div>

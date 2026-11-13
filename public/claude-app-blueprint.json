@@ -1,0 +1,180 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "Liquidación Cueva de Can Marçà",
+  "target": "Claude Artifacts / Standalone Single-File HTML",
+  "version": "1.0.0",
+  "description": "Especificación estructurada en JSON para recrear fielmente la aplicación de liquidación diaria de taquilla de la Cueva de Can Marçà en Claude (Artifacts o archivo HTML autónomo).",
+  "instructions_for_claude": "Pega el contenido de 'claude_prompt' en Claude para que genere un artefacto interactivo HTML autónomo ('single-file HTML') que incluye React, Tailwind CSS, Lucide Icons y persistencia en localStorage.",
+  "claude_prompt": "Crea una aplicación web interactiva completa en un único archivo HTML autónomo para la 'Liquidación Cueva de Can Marçà' utilizando React 18 (vía CDN con Babel standalone), Tailwind CSS y Lucide Icons. La aplicación debe permitir la liquidación diaria de taquilla con cálculo automático en tiempo real: 1) Entradas (Adultos, Niños, Imserso con campos Del, Al, Precio y Grupos Especiales con Pax y Precio); 2) Departamentos (Bar con Nº Z y Total Z, Tienda con Nº Z y Total Z, Mirador/Yoga con Concepto y Total, y Otros Ingresos dinámicos); 3) Cobro Visa (Bar, Tienda, Tickets); 4) TOTAL NETO destacado (Fórmula: Total Bruto - Total Cobro Visa); 5) Arqueo de efectivo con desglose de billetes y monedas o valor manual, calculando Efectivo Teórico y Descuadre de Caja; 6) Desglose de Pax (Taquilla, On-line, Particulares, Buses); 7) Traspaso automático de numeración al crear un nuevo día ('del' toma el valor de 'al' del día anterior); 8) Selector de fecha con navegación día anterior/siguiente; 9) Selector de vista (Hoja clásica tipo tabla contable de papel vs. Vista móvil con tarjetas táctiles); 10) Historial de liquidaciones con desglose mensual y exportación a CSV; 11) Modo impresión limpio (formato folio oficial); 12) Persistencia automática en localStorage.",
+  "meta": {
+    "title": "Liquidación Cueva de Can Marçà",
+    "themeColor": "#1c1917",
+    "palette": {
+      "primary": "amber-800",
+      "primaryHover": "amber-900",
+      "accent": "amber-400",
+      "bgLight": "stone-100",
+      "bgCard": "white",
+      "bgDark": "stone-900",
+      "textMain": "stone-900",
+      "textMuted": "stone-500",
+      "border": "stone-200"
+    },
+    "typography": "Inter, system-ui, sans-serif; Numbers in font-mono font-bold"
+  },
+  "financial_logic": {
+    "formulas": {
+      "paxCategory": "Math.max(0, al - del)",
+      "subtotalCategory": "paxCategory * precio",
+      "subtotalGrupos": "paxGrupos * precioGrupos",
+      "totalPaxTickets": "paxAdultos + paxNinos + paxImserso + paxGrupos",
+      "totalTicketsEuros": "subtotalAdultos + subtotalNinos + subtotalImserso + subtotalGrupos",
+      "totalDepartamentos": "totalBar + totalTienda + totalMiradorYoga + totalOtrosIngresos",
+      "totalBruto": "totalTicketsEuros + totalDepartamentos",
+      "totalVisa": "visaBar + visaTienda + visaTickets",
+      "totalNeto": "totalBruto - totalVisa",
+      "totalGastosYComisiones": "totalGuias + comisionBar + comisionTienda + comisionTickets",
+      "efectivoTeorico": "totalNeto - totalGastosYComisiones",
+      "efectivoContado": "arqueo.efectivoManual !== undefined && arqueo.efectivoManual > 0 ? arqueo.efectivoManual : sumaDesgloseMonedasBilletes",
+      "descuadreCaja": "efectivoContado - efectivoTeorico"
+    },
+    "denominations": [
+      { "key": "b500", "label": "500 €", "multiplier": 500, "type": "billete" },
+      { "key": "b200", "label": "200 €", "multiplier": 200, "type": "billete" },
+      { "key": "b100", "label": "100 €", "multiplier": 100, "type": "billete" },
+      { "key": "b50",  "label": "50 €",  "multiplier": 50,  "type": "billete" },
+      { "key": "b20",  "label": "20 €",  "multiplier": 20,  "type": "billete" },
+      { "key": "b10",  "label": "10 €",  "multiplier": 10,  "type": "billete" },
+      { "key": "b5",   "label": "5 €",   "multiplier": 5,   "type": "billete" },
+      { "key": "m2",   "label": "2 €",   "multiplier": 2,   "type": "moneda" },
+      { "key": "m1",   "label": "1 €",   "multiplier": 1,   "type": "moneda" },
+      { "key": "m050", "label": "0,50 €","multiplier": 0.5, "type": "moneda" },
+      { "key": "m020", "label": "0,20 €","multiplier": 0.2, "type": "moneda" },
+      { "key": "m010", "label": "0,10 €","multiplier": 0.1, "type": "moneda" },
+      { "key": "m005", "label": "0,05 €","multiplier": 0.05,"type": "moneda" }
+    ],
+    "defaultTariffs": {
+      "adultos": 14.0,
+      "ninos": 9.0,
+      "imserso": 11.0,
+      "grupos": 8.0
+    }
+  },
+  "modules": [
+    {
+      "id": "header",
+      "title": "Barra Superior y Acciones Rápidas",
+      "elements": [
+        "Navegador de días (anterior / siguiente con formato fecha DD/MM/YYYY)",
+        "Selector desplegable con días guardados",
+        "Conmutador de vista: Móvil/Tablet (tarjetas verticales) vs Hoja/Tabla (réplica de papel apaisada)",
+        "Botón 'Nuevo Día' con traspaso automático de numeración de tickets",
+        "Botón 'Tarifas' para edición rápida de precios de taquilla",
+        "Botón 'Historial' para revisar días pasados y resumen mensual",
+        "Botón 'Imprimir' para reporte de cierre diario",
+        "Botón 'Descargar CSV' para contabilidad"
+      ]
+    },
+    {
+      "id": "tickets_section",
+      "title": "Entradas y Taquilla",
+      "fields": {
+        "adultos": ["del", "al", "precio", "pax (auto)", "subtotal (auto)"],
+        "ninos": ["del", "al", "precio", "pax (auto)", "subtotal (auto)"],
+        "imserso": ["del", "al", "precio", "pax (auto)", "subtotal (auto)"],
+        "grupos": ["tipo", "pax", "precio", "subtotal (auto)"]
+      }
+    },
+    {
+      "id": "departamentos",
+      "title": "Bar, Tienda, Mirador y Otros",
+      "fields": {
+        "bar": ["zNumero", "totalZ"],
+        "tienda": ["zNumero", "totalZ"],
+        "miradorYoga": ["concepto", "total"],
+        "otrosIngresos": ["array de { id, concepto, importe }"]
+      }
+    },
+    {
+      "id": "cobro_visa",
+      "title": "Cobro Visa / Datáfono",
+      "fields": {
+        "bar": "Cobro tarjeta Bar",
+        "tienda": "Cobro tarjeta Tienda",
+        "tickets": "Cobro tarjeta Taquilla",
+        "totalVisa": "Suma automática de las tres tarjetas"
+      }
+    },
+    {
+      "id": "total_neto",
+      "title": "TOTAL NETO (Destacado)",
+      "formula": "Total Bruto - Total Cobro Visa",
+      "description": "Importe neto a rendir en efectivo. Presentado en tarjeta de alto contraste fondo oscuro (#1c1917) con tipografía en ámbar (#fcd34d) y punto de estado verde esmeralda."
+    },
+    {
+      "id": "arqueo",
+      "title": "Arqueo de Efectivo y Caja",
+      "features": [
+        "Fondo de caja fijo (ej. 300,00 €)",
+        "Desglose de 13 denominaciones de efectivo (billetes de 500 a 5 y monedas de 2 a 0,05)",
+        "Entrada manual alternativa de efectivo contado",
+        "Cálculo de Descuadre de Caja (Efectivo Contado - Efectivo Teórico)"
+      ]
+    },
+    {
+      "id": "pax_breakdown",
+      "title": "Desglose de Pasajeros (Pax)",
+      "fields": [
+        "Pax Taquilla (calculado automáticamente de tickets)",
+        "Pax On-line",
+        "Pax Particulares",
+        "Buses Total"
+      ]
+    }
+  ],
+  "sample_data": {
+    "id": "dia-2026-09-15",
+    "fecha": "2026-09-15",
+    "fechaDisplay": "15/09/2026",
+    "tickets": {
+      "adultos": { "del": 10420, "al": 10485, "precio": 14.0 },
+      "ninos": { "del": 3105, "al": 3122, "precio": 9.0 },
+      "imserso": { "del": 840, "al": 846, "precio": 11.0 },
+      "grupos": { "pax": 0, "precio": 8.0, "tipo": "niños" }
+    },
+    "bar": { "zNumero": "142", "totalZ": 284.5 },
+    "tienda": { "zNumero": "88", "totalZ": 195.0 },
+    "miradorYoga": { "concepto": "yoga", "total": 0.0 },
+    "otrosIngresos": [],
+    "guias": {
+      "guia1": { "nombre": "", "importe": 0.0 },
+      "guia2": { "nombre": "", "importe": 0.0 },
+      "guia3": { "nombre": "", "importe": 0.0 },
+      "guia4": { "nombre": "", "importe": 0.0 },
+      "comisionBar": 0.0,
+      "comisionTienda": 0.0,
+      "comisionTickets": 0.0
+    },
+    "cobroVisa": {
+      "bar": 120.5,
+      "tienda": 95.0,
+      "tickets": 420.0
+    },
+    "arqueo": {
+      "fondoCaja": 300.0,
+      "desglose": {
+        "b500": 0, "b200": 0, "b100": 1, "b50": 4, "b20": 12, "b10": 15, "b5": 10,
+        "m2": 15, "m1": 20, "m050": 10, "m020": 15, "m010": 20, "m005": 20
+      },
+      "efectivoManual": 0.0
+    },
+    "paxBreakdown": {
+      "onLine": 24,
+      "particulares": 45,
+      "buses": []
+    },
+    "observaciones": "",
+    "cerrado": false,
+    "actualizadoEn": "2026-09-15T12:00:00.000Z"
+  }
+}

@@ -158,9 +158,57 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
     onChange(updated);
   };
 
+  const handleEmptyOtroIngresoChange = (field: 'concepto' | 'importe', val: string | number) => {
+    const updated = { ...liquidation };
+    updated.otrosIngresos = [
+      {
+        id: `otro_${Date.now()}`,
+        concepto: field === 'concepto' ? String(val) : '',
+        importe: field === 'importe' ? parseFloat(String(val)) || 0 : 0,
+      },
+    ];
+    onChange(updated);
+  };
+
   const removeOtroIngreso = (id: string) => {
     const updated = { ...liquidation };
     updated.otrosIngresos = (updated.otrosIngresos || []).filter((o) => o.id !== id);
+    onChange(updated);
+  };
+
+  // Otros gastos (debajo de las Visas)
+  const addOtroGasto = () => {
+    const updated = { ...liquidation };
+    updated.otrosGastos = [
+      ...(updated.otrosGastos || []),
+      { id: `gasto_${Date.now()}`, concepto: '', importe: 0 },
+    ];
+    onChange(updated);
+  };
+
+  const updateOtroGasto = (id: string, field: 'concepto' | 'importe', val: string | number) => {
+    const updated = { ...liquidation };
+    updated.otrosGastos = (updated.otrosGastos || []).map((g) =>
+      g.id === id ? { ...g, [field]: field === 'importe' ? parseFloat(String(val)) || 0 : val } : g
+    );
+    onChange(updated);
+  };
+
+  const handleEmptyOtroGastoChange = (field: 'concepto' | 'importe', val: string | number) => {
+    const updated = { ...liquidation };
+    updated.otrosGastos = [
+      {
+        id: `gasto_${Date.now()}`,
+        concepto: field === 'concepto' ? String(val) : '',
+        importe: field === 'importe' ? parseFloat(String(val)) || 0 : 0,
+      },
+    ];
+    onChange(updated);
+  };
+
+  const removeOtroGasto = (id: string) => {
+    const updated = { ...liquidation };
+    updated.otrosGastos = (updated.otrosGastos || []).filter((g) => g.id !== id);
     onChange(updated);
   };
 
@@ -542,11 +590,11 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
               <div className="flex items-center gap-2">
                 <Coffee className="w-4 h-4 text-amber-800" />
                 <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide">
-                  Bar, Tienda y Mirador
+                  Bar, Tienda, Mirador y Otro Ingreso
                 </h3>
               </div>
               <span className="text-xs font-mono font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded">
-                Subtotal: {formatEuro(totals.totalBar + totals.totalTienda + totals.totalMiradorYoga)}
+                Subtotal: {formatEuro(totals.totalBar + totals.totalTienda + totals.totalMiradorYoga + totals.totalOtrosIngresos)}
               </span>
             </div>
 
@@ -653,6 +701,75 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
               </div>
 
             </div>
+
+            {/* Otro ingreso (directamente debajo de Mirador) */}
+            <div className="pt-2 border-t border-stone-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-stone-800 uppercase tracking-wide">Otro ingreso</span>
+                <button
+                  type="button"
+                  onClick={addOtroIngreso}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-amber-900 hover:text-amber-800 bg-amber-50 px-2 py-1 rounded border border-amber-200"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Añadir</span>
+                </button>
+              </div>
+
+              {(liquidation.otrosIngresos || []).length > 0 ? (
+                <div className="space-y-2">
+                  {(liquidation.otrosIngresos || []).map((otro) => (
+                    <div key={otro.id} className="flex items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200">
+                      <input
+                        type="text"
+                        value={otro.concepto}
+                        onChange={(e) => updateOtroIngreso(otro.id, 'concepto', e.target.value)}
+                        placeholder="Concepto otro ingreso..."
+                        className="flex-1 text-xs bg-white border border-stone-300 rounded px-2 py-1.5"
+                      />
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min="0"
+                        value={otro.importe || ''}
+                        onChange={(e) => updateOtroIngreso(otro.id, 'importe', e.target.value)}
+                        placeholder="0,00"
+                        className="w-28 text-right font-mono font-bold text-xs bg-white border border-stone-300 rounded px-2 py-1.5"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeOtroIngreso(otro.id)}
+                        className="p-1 text-stone-400 hover:text-rose-600"
+                        title="Eliminar ingreso"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200">
+                  <input
+                    type="text"
+                    value=""
+                    onChange={(e) => handleEmptyOtroIngresoChange('concepto', e.target.value)}
+                    placeholder="Concepto otro ingreso..."
+                    className="flex-1 text-xs bg-white border border-stone-300 rounded px-2 py-1.5"
+                  />
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value=""
+                    onChange={(e) => handleEmptyOtroIngresoChange('importe', e.target.value)}
+                    placeholder="0,00"
+                    className="w-28 text-right font-mono font-bold text-xs bg-white border border-stone-300 rounded px-2 py-1.5"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 3. Cobro Visa (Tarjetas) Card */}
@@ -714,7 +831,86 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
             </div>
           </div>
 
-          {/* 4. TOTAL NETO (Directamente por debajo del Cobro Visa) */}
+          {/* 3b. Otro gastos (directamente debajo de las Visas) */}
+          <div className="bg-white rounded-xl border border-stone-300 p-3.5 shadow-xs space-y-2">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
+                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide">
+                  Otro gastos
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                  Total Gastos: {formatEuro(totals.totalOtrosGastos)}
+                </span>
+                <button
+                  type="button"
+                  onClick={addOtroGasto}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-rose-900 hover:text-rose-800 bg-rose-50 px-2 py-1 rounded border border-rose-200"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Añadir</span>
+                </button>
+              </div>
+            </div>
+
+            {(liquidation.otrosGastos || []).length > 0 ? (
+              <div className="space-y-2">
+                {(liquidation.otrosGastos || []).map((gasto) => (
+                  <div key={gasto.id} className="flex items-center gap-2 bg-rose-50/40 p-2 rounded-lg border border-rose-200/70">
+                    <input
+                      type="text"
+                      value={gasto.concepto}
+                      onChange={(e) => updateOtroGasto(gasto.id, 'concepto', e.target.value)}
+                      placeholder="Concepto del gasto..."
+                      className="flex-1 text-xs bg-white border border-stone-300 rounded px-2 py-1.5"
+                    />
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0"
+                      value={gasto.importe || ''}
+                      onChange={(e) => updateOtroGasto(gasto.id, 'importe', e.target.value)}
+                      placeholder="0,00"
+                      className="w-28 text-right font-mono font-bold text-xs bg-white border border-stone-300 rounded px-2 py-1.5 text-rose-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeOtroGasto(gasto.id)}
+                      className="p-1 text-stone-400 hover:text-rose-600"
+                      title="Eliminar gasto"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-rose-50/40 p-2 rounded-lg border border-rose-200/70">
+                <input
+                  type="text"
+                  value=""
+                  onChange={(e) => handleEmptyOtroGastoChange('concepto', e.target.value)}
+                  placeholder="Concepto del gasto..."
+                  className="flex-1 text-xs bg-white border border-stone-300 rounded px-2 py-1.5"
+                />
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  value=""
+                  onChange={(e) => handleEmptyOtroGastoChange('importe', e.target.value)}
+                  placeholder="0,00"
+                  className="w-28 text-right font-mono font-bold text-xs bg-white border border-stone-300 rounded px-2 py-1.5 text-rose-900"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 4. TOTAL NETO (Directamente por debajo de Visas y Otro gastos) */}
           <div id="card-total-neto" className="bg-stone-900 text-white rounded-xl p-4 shadow-lg border-2 border-stone-800 space-y-3">
             <div className="flex items-center justify-between border-b border-stone-800 pb-2">
               <span className="text-xs uppercase font-bold text-amber-400 flex items-center gap-1.5">
@@ -733,61 +929,13 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
                 </span>
                 <span className="text-xs text-stone-400 block mt-0.5 font-mono">
                   {formatEuro(totals.totalBruto)} (Bruto) − {formatEuro(totals.totalVisa)} (Cobro Visa)
+                  {totals.totalOtrosGastos > 0 ? ` − ${formatEuro(totals.totalOtrosGastos)} (Otro gastos)` : ''}
                 </span>
               </div>
               <div className="text-3xl sm:text-4xl font-mono font-black text-amber-300 text-right">
                 {formatEuro(totals.totalNeto)}
               </div>
             </div>
-          </div>
-
-          {/* 5. Otros Conceptos / Varios (opcional) */}
-          <div className="bg-white rounded-xl border border-stone-300 p-3.5 shadow-xs space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-stone-800 uppercase tracking-wide">Otros Conceptos / Varios</span>
-              <button
-                type="button"
-                onClick={addOtroIngreso}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-900 hover:text-amber-800 bg-amber-50 px-2 py-1 rounded border border-amber-200"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Añadir</span>
-              </button>
-            </div>
-
-            {(liquidation.otrosIngresos || []).length > 0 ? (
-              <div className="space-y-2">
-                {liquidation.otrosIngresos.map((otro) => (
-                  <div key={otro.id} className="flex items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200">
-                    <input
-                      type="text"
-                      value={otro.concepto}
-                      onChange={(e) => updateOtroIngreso(otro.id, 'concepto', e.target.value)}
-                      placeholder="Concepto..."
-                      className="flex-1 text-xs bg-white border border-stone-300 rounded px-2 py-1"
-                    />
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
-                      value={otro.importe || ''}
-                      onChange={(e) => updateOtroIngreso(otro.id, 'importe', e.target.value)}
-                      placeholder="0,00"
-                      className="w-24 text-right font-mono font-bold text-xs bg-white border border-stone-300 rounded px-2 py-1"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeOtroIngreso(otro.id)}
-                      className="p-1 text-stone-400 hover:text-rose-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-stone-400 italic">No hay ingresos adicionales registrados.</p>
-            )}
           </div>
 
           {/* 7. Desglose de Pax y Buses Card */}
@@ -1211,12 +1359,117 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
                   </td>
                 </tr>
 
+                {/* 8. Otro ingreso (directamente debajo de mirador) */}
+                {(liquidation.otrosIngresos || []).length > 0 ? (
+                  (liquidation.otrosIngresos || []).map((otro, idx) => (
+                    <tr key={otro.id} className="hover:bg-amber-50/20 transition-colors">
+                      <td className="py-2 px-3 font-bold text-stone-900 border-r-2 border-stone-900">
+                        <div className="flex items-center justify-between gap-1">
+                          <span>{idx === 0 ? 'Otro ingreso' : 'Otro ingreso +'}</span>
+                          <div className="flex items-center gap-1">
+                            {idx === 0 && (
+                              <button
+                                type="button"
+                                onClick={addOtroIngreso}
+                                className="p-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900"
+                                title="Añadir otro ingreso"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeOtroIngreso(otro.id)}
+                              className="p-0.5 text-stone-400 hover:text-rose-600"
+                              title="Eliminar fila"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-1 px-2 text-center text-stone-400 border-r border-stone-400">-</td>
+                      <td className="py-1 px-2 text-center text-stone-400 border-r border-stone-400">-</td>
+                      <td className="py-1 px-2 text-center text-stone-400 border-r border-stone-400">-</td>
+                      <td className="py-1 px-2 text-center border-r border-stone-400 font-medium text-stone-700">
+                        <input
+                          type="text"
+                          value={otro.concepto}
+                          onChange={(e) => updateOtroIngreso(otro.id, 'concepto', e.target.value)}
+                          placeholder="concepto..."
+                          className="w-full text-center bg-transparent border-b border-dashed border-stone-300 hover:border-stone-500 py-0.5 text-xs text-stone-800 focus:outline-hidden"
+                        />
+                      </td>
+                      <td className="py-1 px-2 text-right text-stone-400 border-r border-stone-400">-</td>
+                      <td className="py-1 px-1.5">
+                        <div className="relative">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            value={otro.importe || ''}
+                            onChange={(e) => updateOtroIngreso(otro.id, 'importe', e.target.value)}
+                            placeholder="0,00"
+                            className="w-full text-right font-mono font-extrabold py-1.5 pr-6 pl-1 bg-white border border-stone-300 rounded text-stone-950 focus:outline-hidden focus:ring-1 focus:ring-amber-800 text-sm sm:text-xs"
+                          />
+                          <span className="absolute right-2 top-2 text-stone-400 pointer-events-none">€</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr className="hover:bg-amber-50/20 transition-colors">
+                    <td className="py-2 px-3 font-bold text-stone-900 border-r-2 border-stone-900">
+                      <div className="flex items-center justify-between gap-1">
+                        <span>Otro ingreso</span>
+                        <button
+                          type="button"
+                          onClick={addOtroIngreso}
+                          className="p-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900"
+                          title="Añadir otro ingreso"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="py-1 px-2 text-center text-stone-400 border-r border-stone-400">-</td>
+                    <td className="py-1 px-2 text-center text-stone-400 border-r border-stone-400">-</td>
+                    <td className="py-1 px-2 text-center text-stone-400 border-r border-stone-400">-</td>
+                    <td className="py-1 px-2 text-center border-r border-stone-400 font-medium text-stone-700">
+                      <input
+                        type="text"
+                        value=""
+                        onChange={(e) => handleEmptyOtroIngresoChange('concepto', e.target.value)}
+                        placeholder="concepto..."
+                        className="w-full text-center bg-transparent border-b border-dashed border-stone-300 hover:border-stone-500 py-0.5 text-xs text-stone-800 focus:outline-hidden"
+                      />
+                    </td>
+                    <td className="py-1 px-2 text-right text-stone-400 border-r border-stone-400">-</td>
+                    <td className="py-1 px-1.5">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          min="0"
+                          value=""
+                          onChange={(e) => handleEmptyOtroIngresoChange('importe', e.target.value)}
+                          placeholder="0,00"
+                          className="w-full text-right font-mono font-extrabold py-1.5 pr-6 pl-1 bg-white border border-stone-300 rounded text-stone-950 focus:outline-hidden focus:ring-1 focus:ring-amber-800 text-sm sm:text-xs"
+                        />
+                        <span className="absolute right-2 top-2 text-stone-400 pointer-events-none">€</span>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
                 {/* Sub-divider: TOTAL BRUTTO */}
                 <tr className="border-t-2 border-b-2 border-stone-900 bg-stone-100 font-bold">
                   <td colSpan={5} className="py-2 px-3 border-r-2 border-stone-900">
                     <div className="flex items-center justify-between text-[11px] text-stone-600">
                       <span>Tickets Taquilla: <strong>{totals.totalPaxTickets} pax</strong> ({formatEuro(totals.totalTicketsEuros)})</span>
-                      <span>Bar+Tienda+Mirador: <strong>{formatEuro(totals.totalBar + totals.totalTienda + totals.totalMiradorYoga)}</strong></span>
+                      <span>Bar+Tienda+Mirador+Otros: <strong>{formatEuro(totals.totalBar + totals.totalTienda + totals.totalMiradorYoga + totals.totalOtrosIngresos)}</strong></span>
                     </div>
                   </td>
                   <td className="py-2 px-2 text-right font-black uppercase tracking-wider text-stone-950 border-r border-stone-400">
@@ -1228,7 +1481,7 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
                 </tr>
 
                 {/* COBRO VISA ROW */}
-                <tr id="row-cobro-visa" className="hover:bg-blue-50/20 transition-colors border-b-2 border-stone-900">
+                <tr id="row-cobro-visa" className="hover:bg-blue-50/20 transition-colors border-b border-stone-400">
                   <td className="py-2 px-3 font-bold text-stone-900 border-r-2 border-stone-900">
                     Cobro Visa
                   </td>
@@ -1279,8 +1532,111 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
                   </td>
                 </tr>
 
+                {/* OTRO GASTOS ROWS (directamente debajo de las Visas) */}
+                {(liquidation.otrosGastos || []).length > 0 ? (
+                  (liquidation.otrosGastos || []).map((gasto, idx) => (
+                    <tr key={gasto.id} className="hover:bg-rose-50/25 transition-colors border-b border-stone-400">
+                      <td className="py-2 px-3 font-bold text-stone-900 border-r-2 border-stone-900">
+                        <div className="flex items-center justify-between gap-1">
+                          <span>{idx === 0 ? 'Otro gastos' : 'Otro gastos +'}</span>
+                          <div className="flex items-center gap-1">
+                            {idx === 0 && (
+                              <button
+                                type="button"
+                                onClick={addOtroGasto}
+                                className="p-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-900"
+                                title="Añadir otro gasto"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeOtroGasto(gasto.id)}
+                              className="p-0.5 text-stone-400 hover:text-rose-600"
+                              title="Eliminar gasto"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                      <td colSpan={4} className="py-1 px-2 border-r border-stone-400">
+                        <input
+                          type="text"
+                          value={gasto.concepto}
+                          onChange={(e) => updateOtroGasto(gasto.id, 'concepto', e.target.value)}
+                          placeholder="Concepto del gasto..."
+                          className="w-full text-xs bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 focus:outline-hidden focus:ring-1 focus:ring-rose-700"
+                        />
+                      </td>
+                      <td className="py-1 px-2 text-right font-semibold text-rose-800 border-r border-stone-400 text-[11px]">
+                        Gasto (−)
+                      </td>
+                      <td className="py-1 px-1.5 bg-rose-50/30">
+                        <div className="relative">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            value={gasto.importe || ''}
+                            onChange={(e) => updateOtroGasto(gasto.id, 'importe', e.target.value)}
+                            placeholder="0,00"
+                            className="w-full text-right font-mono font-extrabold py-1.5 pr-6 pl-1 bg-white border border-rose-300 rounded text-rose-950 focus:outline-hidden focus:ring-1 focus:ring-rose-700 text-sm sm:text-xs"
+                          />
+                          <span className="absolute right-2 top-2 text-stone-400 pointer-events-none">€</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr className="hover:bg-rose-50/25 transition-colors border-b border-stone-400">
+                    <td className="py-2 px-3 font-bold text-stone-900 border-r-2 border-stone-900">
+                      <div className="flex items-center justify-between gap-1">
+                        <span>Otro gastos</span>
+                        <button
+                          type="button"
+                          onClick={addOtroGasto}
+                          className="p-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-900"
+                          title="Añadir otro gasto"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+                    <td colSpan={4} className="py-1 px-2 border-r border-stone-400">
+                      <input
+                        type="text"
+                        value=""
+                        onChange={(e) => handleEmptyOtroGastoChange('concepto', e.target.value)}
+                        placeholder="Concepto del gasto..."
+                        className="w-full text-xs bg-white border border-stone-200 rounded px-2 py-1 text-stone-800 focus:outline-hidden focus:ring-1 focus:ring-rose-700"
+                      />
+                    </td>
+                    <td className="py-1 px-2 text-right font-semibold text-rose-800 border-r border-stone-400 text-[11px]">
+                      Gasto (−)
+                    </td>
+                    <td className="py-1 px-1.5 bg-rose-50/30">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          min="0"
+                          value=""
+                          onChange={(e) => handleEmptyOtroGastoChange('importe', e.target.value)}
+                          placeholder="0,00"
+                          className="w-full text-right font-mono font-extrabold py-1.5 pr-6 pl-1 bg-white border border-rose-300 rounded text-rose-950 focus:outline-hidden focus:ring-1 focus:ring-rose-700 text-sm sm:text-xs"
+                        />
+                        <span className="absolute right-2 top-2 text-stone-400 pointer-events-none">€</span>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
                 {/* ========================================================================= */}
-                {/* TOTAL NETO ROW (DIRECTAMENTE POR DEBAJO DE COBRO VISA)                    */}
+                {/* TOTAL NETO ROW (DIRECTAMENTE POR DEBAJO DE VISAS Y OTRO GASTOS)           */}
                 {/* ========================================================================= */}
                 <tr id="row-total-neto" className="border-t-2 border-b-2 border-stone-900 bg-stone-900 text-white font-bold">
                   <td colSpan={5} className="py-2.5 px-3 border-r border-stone-700">
@@ -1289,6 +1645,9 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                         <span>
                           Fórmula: <strong>Total Bruto ({formatEuro(totals.totalBruto)})</strong> − <strong>Cobro Visa ({formatEuro(totals.totalVisa)})</strong>
+                          {totals.totalOtrosGastos > 0 && (
+                            <> − <strong>Otro gastos ({formatEuro(totals.totalOtrosGastos)})</strong></>
+                          )}
                         </span>
                       </div>
                       <span className="text-amber-300 font-mono font-semibold">
@@ -1301,56 +1660,6 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono text-base sm:text-lg font-black text-amber-300 bg-stone-950">
                     {formatEuro(totals.totalNeto)}
-                  </td>
-                </tr>
-
-                {/* OTROS INGRESO ROWS (if any) */}
-                {(liquidation.otrosIngresos || []).map((otro) => (
-                  <tr key={otro.id} className="bg-stone-50/60 border-b border-stone-300">
-                    <td className="py-1.5 px-3 font-semibold text-stone-700 border-r-2 border-stone-900 flex items-center justify-between">
-                      <span>Otros</span>
-                      <button
-                        type="button"
-                        onClick={() => removeOtroIngreso(otro.id)}
-                        className="text-stone-400 hover:text-rose-600"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </td>
-                    <td colSpan={5} className="py-1 px-2 border-r border-stone-400">
-                      <input
-                        type="text"
-                        value={otro.concepto}
-                        onChange={(e) => updateOtroIngreso(otro.id, 'concepto', e.target.value)}
-                        placeholder="Concepto..."
-                        className="w-full text-xs bg-white border border-stone-200 rounded px-2 py-1"
-                      />
-                    </td>
-                    <td className="py-1 px-1.5 text-right">
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        step="0.01"
-                        value={otro.importe || ''}
-                        onChange={(e) => updateOtroIngreso(otro.id, 'importe', e.target.value)}
-                        placeholder="0,00"
-                        className="w-full text-right font-mono font-bold py-1 px-2 bg-white border border-stone-300 rounded text-stone-900"
-                      />
-                    </td>
-                  </tr>
-                ))}
-
-                {/* Add Otros button row */}
-                <tr className="border-b border-stone-300 bg-white">
-                  <td colSpan={7} className="py-1.5 px-3">
-                    <button
-                      type="button"
-                      onClick={addOtroIngreso}
-                      className="inline-flex items-center gap-1 text-[11px] text-stone-600 hover:text-stone-900 hover:underline font-medium"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Añadir concepto Otros / Varios</span>
-                    </button>
                   </td>
                 </tr>
 
