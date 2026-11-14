@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Calendar, 
   PlusCircle, 
@@ -8,7 +8,9 @@ import {
   CheckCircle2, 
   ChevronLeft, 
   ChevronRight,
-  Smartphone
+  Smartphone,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { DailyLiquidation, TotalesCalculados } from '../types';
 import { formatDateToES, formatEuro } from '../utils/calculator';
@@ -36,6 +38,26 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectDate,
   onOpenInstallModal,
 }) => {
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('cueva_header_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapsed = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('cueva_header_collapsed', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
   // Sort dates
   const sortedDays = [...allLiquidations].sort((a, b) => a.fecha.localeCompare(b.fecha));
   const currentIndex = sortedDays.findIndex(d => d.id === currentLiquidation.id);
@@ -56,8 +78,29 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
+    <header
+      className={
+        isCollapsed
+          ? 'sticky top-0 z-30 pointer-events-none'
+          : 'bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs'
+      }
+    >
+      {isCollapsed && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-1.5 flex justify-end">
+          <button
+            id="btn-toggle-header"
+            type="button"
+            onClick={toggleCollapsed}
+            className="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-stone-900/90 hover:bg-stone-900 text-amber-300 border border-stone-700 shadow-sm backdrop-blur-xs transition-all cursor-pointer"
+            title="Mostrar barra superior"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Mostrar barra</span>
+          </button>
+        </div>
+      )}
+
+      <div className={isCollapsed ? 'hidden' : 'max-w-7xl mx-auto px-4 sm:px-6 py-3.5'}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           
           {/* Brand & Day Identity */}
@@ -199,6 +242,16 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="sm:hidden">App</span>
                 </button>
               )}
+
+              <button
+                id="btn-toggle-header"
+                type="button"
+                onClick={toggleCollapsed}
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 transition-colors cursor-pointer"
+                title="Ocultar esta barra para dar más espacio a la calculadora"
+              >
+                <EyeOff className="w-3.5 h-3.5 text-stone-600" />
+              </button>
             </div>
 
           </div>

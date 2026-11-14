@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DailyLiquidation } from './types';
 import { 
   loadStoredLiquidations, 
   saveLiquidationsToStorage, 
   loadSelectedId, 
   saveSelectedId,
-  createNewDayFromPrevious
+  createNewDayFromPrevious,
+  getTodayLocalISO,
+  loadAutoNewDaySetting,
+  saveAutoNewDaySetting
 } from './utils/initialData';
 import { calculateTotals, exportToCSV, formatDateToES } from './utils/calculator';
 import { Header } from './components/Header';
@@ -19,6 +22,8 @@ import { Sparkles, Smartphone } from 'lucide-react';
 export default function App() {
   const [liquidations, setLiquidations] = useState<DailyLiquidation[]>(() => loadStoredLiquidations());
   const [currentId, setCurrentId] = useState<string>(() => loadSelectedId());
+  const [autoNewDayEnabled, setAutoNewDayEnabled] = useState<boolean>(() => loadAutoNewDaySetting());
+  const skippedAutoDatesRef = useRef<Set<string>>(new Set());
 
   // Modals state
   const [isNewDayOpen, setIsNewDayOpen] = useState(false);
@@ -37,6 +42,58 @@ export default function App() {
   useEffect(() => {
     saveSelectedId(currentId);
   }, [currentId]);
+
+  useEffect(() => {
+    saveAutoNewDaySetting(autoNewDayEnabled);
+  }, [autoNewDayEnabled]);
+
+  // Automatic New Day rollover check
+  const checkAndCreateToday = useCallback(() => {
+    if (!autoNewDayEnabled) return;
+    const todayISO = getTodayLocalISO();
+    if (skippedAutoDatesRef.current.has(todayISO)) return;
+
+    setLiquidations((prev) => {
+      if (prev.length === 0) return prev;
+      const alreadyExists = prev.some((l) => l.fecha === todayISO || l.id === todayISO);
+      if (alreadyExists) return prev;
+
+      const sortedDesc = [...prev].sort((a, b) => b.fecha.localeCompare(a.fecha));
+      const latestDay = sortedDesc[0];
+      if (!latestDay || todayISO <= latestDay.fecha) return prev;
+
+      const newDay = createNewDayFromPrevious(latestDay, todayISO);
+      setCurrentId(newDay.id);
+      setToastMessage(
+        `Nuevo día automático (${formatDateToES(todayISO)}) abierto desde ${formatDateToES(latestDay.fecha)}: Adultos (${newDay.tickets.adultos.del}), Niños (${newDay.tickets.ninos.del}), Imserso (${newDay.tickets.imserso.del}).`
+      );
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 7000);
+
+      return [...prev, newDay];
+    });
+  }, [autoNewDayEnabled]);
+
+  useEffect(() => {
+    checkAndCreateToday();
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndCreateToday();
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    const intervalId = window.setInterval(checkAndCreateToday, 60_000);
+
+    return () => {
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.clearInterval(intervalId);
+    };
+  }, [checkAndCreateToday]);
 
   // Current liquidation object
   const currentLiquidation = 
@@ -91,6 +148,9 @@ export default function App() {
       return;
     }
     const dayToDelete = liquidations.find((l) => l.id === id);
+    if (dayToDelete) {
+      skippedAutoDatesRef.current.add(dayToDelete.fecha);
+    }
     const remaining = liquidations.filter((l) => l.id !== id);
     setLiquidations(remaining);
     if (currentId === id) {
@@ -159,7 +219,9 @@ export default function App() {
             </span>
             <span className="text-stone-400">•</span>
             <span className="text-stone-500">
-              Continuidad de numeración taquilla activa
+              {autoNewDayEnabled
+                ? 'Apertura automática diaria activa (arrastre de tickets)'
+                : 'Continuidad de numeración taquilla activa'}
             </span>
           </div>
           <div className="text-xs font-mono text-stone-500">
@@ -211,6 +273,8 @@ export default function App() {
         previousLiquidation={currentLiquidation}
         allLiquidations={liquidations}
         onCreateNewDay={handleCreateNewDay}
+        autoNewDayEnabled={autoNewDayEnabled}
+        onToggleAutoNewDay={setAutoNewDayEnabled}
       />
 
       {/* History Drawer/Modal */}

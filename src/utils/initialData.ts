@@ -193,6 +193,33 @@ export const createNewDayFromPrevious = (
 
 const STORAGE_KEY = 'cueva_liquidaciones_data_v1';
 const CURRENT_ID_KEY = 'cueva_current_selected_id';
+const AUTO_NEW_DAY_KEY = 'cueva_auto_new_day_v1';
+
+export const getTodayLocalISO = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const loadAutoNewDaySetting = (): boolean => {
+  try {
+    const raw = localStorage.getItem(AUTO_NEW_DAY_KEY);
+    if (raw === null) return true; // Enabled by default
+    return raw === 'true';
+  } catch {
+    return true;
+  }
+};
+
+export const saveAutoNewDaySetting = (enabled: boolean): void => {
+  try {
+    localStorage.setItem(AUTO_NEW_DAY_KEY, String(enabled));
+  } catch {
+    // ignore
+  }
+};
 
 export const loadStoredLiquidations = (): DailyLiquidation[] => {
   try {

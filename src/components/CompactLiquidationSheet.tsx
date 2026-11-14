@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DailyLiquidation, 
   TotalesCalculados 
@@ -20,6 +20,9 @@ import {
   History,
   Smartphone,
   Table2,
+  RotateCw,
+  Eye,
+  EyeOff,
   Coffee,
   ShoppingBag,
   Compass,
@@ -54,8 +57,103 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
 }) => {
   const [showPriceEdit, setShowPriceEdit] = useState(false);
   const [showGuideCommissions, setShowGuideCommissions] = useState(false);
-  // View mode for the calculator: 'mobile' (touch-first responsive cards) or 'sheet' (classic paper-table view)
-  const [activeLayout, setActiveLayout] = useState<'mobile' | 'sheet'>('sheet');
+  const [isActionBarCollapsed, setIsActionBarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('cueva_actionbar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleActionBar = () => {
+    setIsActionBarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('cueva_actionbar_collapsed', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  // Track tablet/mobile screen orientation (portrait vs landscape)
+  const [isLandscape, setIsLandscape] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= window.innerHeight : true
+  );
+  // View preference: 'auto' follows tablet rotation, or manual 'mobile' / 'sheet'
+  const [layoutMode, setLayoutMode] = useState<'auto' | 'mobile' | 'sheet'>(() => {
+    try {
+      const saved = localStorage.getItem('cueva_layout_mode');
+      if (saved === 'auto' || saved === 'mobile' || saved === 'sheet') return saved;
+    } catch {
+      // ignore
+    }
+    return 'auto';
+  });
+  const [rotationNotice, setRotationNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updateOrientation = () => {
+      const mq = window.matchMedia?.('(orientation: landscape)');
+      setIsLandscape(mq ? mq.matches : window.innerWidth >= window.innerHeight);
+    };
+    updateOrientation();
+    window.addEventListener('orientationchange', updateOrientation);
+    window.addEventListener('resize', updateOrientation);
+    return () => {
+      window.removeEventListener('orientationchange', updateOrientation);
+      window.removeEventListener('resize', updateOrientation);
+    };
+  }, []);
+
+  const handleSelectLayoutMode = (mode: 'auto' | 'mobile' | 'sheet') => {
+    setLayoutMode(mode);
+    try {
+      localStorage.setItem('cueva_layout_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
+
+  const activeLayout: 'mobile' | 'sheet' =
+    layoutMode === 'auto' ? (isLandscape ? 'sheet' : 'mobile') : layoutMode;
+
+  const handleRotateScreen = async () => {
+    const targetOrientation = isLandscape ? 'portrait' : 'landscape';
+    let lockedNatively = false;
+
+    try {
+      const isStandalone =
+        window.matchMedia?.('(display-mode: standalone)').matches ||
+        (navigator as unknown as { standalone?: boolean }).standalone === true;
+
+      if (!isStandalone && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen().catch(() => {});
+      }
+
+      const orientationApi = screen.orientation as ScreenOrientation & {
+        lock?: (orientation: 'portrait' | 'landscape') => Promise<void>;
+      };
+
+      if (orientationApi && typeof orientationApi.lock === 'function') {
+        await orientationApi.lock(targetOrientation);
+        lockedNatively = true;
+        setIsLandscape(targetOrientation === 'landscape');
+      }
+    } catch {
+      lockedNatively = false;
+    }
+
+    if (!lockedNatively) {
+      const nextLayout = activeLayout === 'sheet' ? 'mobile' : 'sheet';
+      handleSelectLayoutMode(nextLayout);
+      setRotationNotice(
+        `Vista cambiada a ${nextLayout === 'sheet' ? 'Horizontal (Tabla)' : 'Vertical (Móvil / Tablet)'}. También puedes girar físicamente la tablet en cualquier dirección.`
+      );
+      setTimeout(() => setRotationNotice(null), 4500);
+    }
+  };
 
   // Sorting for date prev / next
   const sortedDays = [...allLiquidations].sort((a, b) => a.fecha.localeCompare(b.fecha));
@@ -254,6 +352,20 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
   return (
     <div className="space-y-4">
       {/* Top compact action bar: Date Navigation & Quick Actions */}
+      {isActionBarCollapsed ? (
+        <div className="flex justify-end">
+          <button
+            id="btn-toggle-actionbar"
+            type="button"
+            onClick={toggleActionBar}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 shadow-2xs transition-all cursor-pointer"
+            title="Mostrar barra de herramientas y fecha"
+          >
+            <Eye className="w-3.5 h-3.5 text-amber-800" />
+            <span>Mostrar controles</span>
+          </button>
+        </div>
+      ) : (
       <div className="bg-white border border-stone-300 rounded-xl p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-xs">
         
         {/* Date Selector & Navigation */}
@@ -297,26 +409,42 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
         {/* Layout Switcher (Mobile/Tablet vs Sheet) & Action Buttons */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           
-          {/* Responsive Layout Toggle */}
+          {/* Responsive Layout & Tablet Rotation Toggle */}
           <div className="inline-flex items-center bg-stone-100 p-0.5 rounded-lg border border-stone-300 text-xs font-semibold">
             <button
+              id="btn-layout-auto"
               type="button"
-              onClick={() => setActiveLayout('mobile')}
-              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md transition-all ${
-                activeLayout === 'mobile'
+              onClick={() => handleSelectLayoutMode('auto')}
+              className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md transition-all ${
+                layoutMode === 'auto'
+                  ? 'bg-amber-900 text-white shadow-xs font-bold'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+              title="Cambia automáticamente entre Vertical y Tabla al rotar la tablet"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+              <span>Auto</span>
+            </button>
+            <button
+              id="btn-layout-mobile"
+              type="button"
+              onClick={() => handleSelectLayoutMode('mobile')}
+              className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md transition-all ${
+                layoutMode === 'mobile'
                   ? 'bg-amber-900 text-white shadow-xs font-bold'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
               title="Vista táctil vertical adaptada a móvil y tablet"
             >
               <Smartphone className="w-3.5 h-3.5" />
-              <span>Móvil / Tablet</span>
+              <span className="hidden sm:inline">Vertical</span>
             </button>
             <button
+              id="btn-layout-sheet"
               type="button"
-              onClick={() => setActiveLayout('sheet')}
-              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md transition-all ${
-                activeLayout === 'sheet'
+              onClick={() => handleSelectLayoutMode('sheet')}
+              className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md transition-all ${
+                layoutMode === 'sheet'
                   ? 'bg-amber-900 text-white shadow-xs font-bold'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
@@ -326,6 +454,18 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
               <span>Hoja / Tabla</span>
             </button>
           </div>
+
+          {/* Tablet Screen Rotation Button */}
+          <button
+            id="btn-rotate-tablet-screen"
+            type="button"
+            onClick={handleRotateScreen}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-stone-800 hover:bg-stone-900 text-amber-300 rounded-lg text-xs font-bold transition-all shadow-xs active:scale-95"
+            title="Rotar orientación de pantalla para tablet (Horizontal / Vertical)"
+          >
+            <RotateCw className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Rotar Tablet</span>
+          </button>
 
           {/* Quick Primary Button: Nuevo Día */}
           <button
@@ -378,9 +518,37 @@ export const CompactLiquidationSheet: React.FC<CompactLiquidationSheetProps> = (
           >
             <Download className="w-3.5 h-3.5" />
           </button>
+
+          <button
+            id="btn-toggle-actionbar"
+            type="button"
+            onClick={toggleActionBar}
+            className="inline-flex items-center gap-1 px-2 py-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-lg text-xs font-semibold text-stone-700 transition-colors cursor-pointer"
+            title="Ocultar esta barra de controles para dar más espacio a la calculadora"
+          >
+            <EyeOff className="w-3.5 h-3.5 text-stone-600" />
+          </button>
         </div>
 
       </div>
+      )}
+
+      {/* Tablet rotation notice banner */}
+      {rotationNotice && (
+        <div className="bg-stone-900 text-amber-100 border border-stone-700 rounded-xl px-3.5 py-2 text-xs flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2">
+            <RotateCw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>{rotationNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRotationNotice(null)}
+            className="text-amber-300 hover:text-white font-semibold shrink-0"
+          >
+            OK
+          </button>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MODE 1: MOBILE & TABLET FLEXIBLE TOUCH VIEW (No sideways scroll, big inputs) */}

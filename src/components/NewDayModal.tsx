@@ -18,6 +18,8 @@ interface NewDayModalProps {
   previousLiquidation: DailyLiquidation;
   allLiquidations: DailyLiquidation[];
   onCreateNewDay: (newDate: string, sourceDayId: string) => void;
+  autoNewDayEnabled?: boolean;
+  onToggleAutoNewDay?: (enabled: boolean) => void;
 }
 
 export const NewDayModal: React.FC<NewDayModalProps> = ({
@@ -26,6 +28,8 @@ export const NewDayModal: React.FC<NewDayModalProps> = ({
   previousLiquidation,
   allLiquidations,
   onCreateNewDay,
+  autoNewDayEnabled = true,
+  onToggleAutoNewDay,
 }) => {
   if (!isOpen) return null;
 
@@ -97,6 +101,36 @@ export const NewDayModal: React.FC<NewDayModalProps> = ({
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
+          {/* Automatic Daily Rollover Toggle */}
+          {onToggleAutoNewDay && (
+            <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl flex items-center justify-between gap-3">
+              <div className="text-xs">
+                <div className="font-bold text-stone-900">
+                  Automatizar Nuevo Día
+                </div>
+                <p className="text-[11px] text-stone-600 mt-0.5">
+                  Abre automáticamente la hoja de hoy al iniciar o cambiar de día arrastrando los tickets de ayer.
+                </p>
+              </div>
+              <button
+                id="btn-toggle-auto-new-day"
+                type="button"
+                role="switch"
+                aria-checked={autoNewDayEnabled}
+                onClick={() => onToggleAutoNewDay(!autoNewDayEnabled)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-amber-800 ${
+                  autoNewDayEnabled ? 'bg-emerald-600' : 'bg-stone-300'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out ${
+                    autoNewDayEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+
           {/* Information Notice */}
           <div className="p-3.5 bg-amber-50/90 border border-amber-200/80 rounded-xl flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
